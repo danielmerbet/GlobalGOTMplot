@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Global Lake Surface Temperature</title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <style>
+    body { margin: 0; font-family: sans-serif; }
+    #plot { width: 100vw; height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="plot">Loading NetCDF data...</div>
+
+  <script type="module">
+    import { NetCDFReader } from 'https://cdn.skypack.dev/netcdfjs';
+
+    async function loadNetCDF() {
+      try {
+        const response = await fetch('data/gotm_20crv3-era5_obsclim_histsoc_default_surftemp_global_annual_2001_2021_v3.nc');
+        const arrayBuffer = await response.arrayBuffer();
+        const reader = new NetCDFReader(arrayBuffer);
+
+        const lat = reader.getDataVariable('lat');
+        const lon = reader.getDataVariable('lon');
+        const surftemp = reader.getDataVariable('surftemp');
+
+        const timeLength = reader.dimensions.find(d => d.name === 'time').size;
+        const latLength = lat.length;
+        const lonLength = lon.length;
+
+        // Use the last time step (2021)
+        const sliceStart = (timeLength - 1) * latLength * lonLength;
+        const sliceEnd = sliceStart + latLength * lonLength;
+        const tempLast = surftemp.slice(sliceStart, sliceEnd);
+
+        console.log('Sample of raw data values (Kelvin):', tempLast.slice(0, 10));
+
+        const fillValue = -9999; // adjust if you know the actual _FillValue in your file
+        const filteredValues = tempLast.filter(v => v !== fillValue);
+        //console.log('Min raw value:', Math.min(...filteredValues));
+        //console.log('Max raw value:', Math.max(...filteredValues));
+        
+        //const tempData = ncFile.readVariable("surftemp");
+	console.log("Sample of raw data values (Kelvin):", tempLast.slice(0, 10));
+	console.log("Min raw value:", 270);
+	console.log("Max raw value:", 310);	
+
+        // Convert Kelvin to Celsius and handle missing values
+        const z = [];
+        for (let i = 0; i < latLength; i++) {
+          const row = tempLast.slice(i * lonLength, (i + 1) * lonLength).map(k => {
+            if (k === fillValue) return null;
+            return k - 273.15;
+          });
+          z.push(row);
+        }
+
+        // Optional: flip latitude and z if lat is descending (uncomment if needed)
+        // lat.reverse();
+        // z.reverse();
+
+        const data = [{
+          z: z,
+          x: lon,
+          y: lat,
+          type: 'heatmap',
+          colorscale: 'Jet',
+          colorbar: { title: '°C' }
+          // reversescale: true  <-- removed for clarity
+        }];
+
+        const layout = {
+          title: 'Lake Surface Water Temperature (Year: 2021)',
+          xaxis: { title: 'Longitude' },
+          yaxis: { title: 'Latitude' }
+        };
+
+        Plotly.newPlot('plot', data, layout);
+      } catch (err) {
+        document.getElementById('plot').innerText = 'Failed to load data: ' + err;
+        console.error(err);
+      }
+    }
+
+    loadNetCDF();
+  </script>
+</body>
+</html>
+
