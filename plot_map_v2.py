@@ -9,6 +9,8 @@ import geoviews
 import holoviews as hv
 from bokeh.io import save
 from bokeh.plotting import figure
+from bokeh.embed import file_html
+from bokeh.resources import CDN
 import numpy as np
 from matplotlib.cm import get_cmap
 from matplotlib.colors import ListedColormap
@@ -79,5 +81,16 @@ animated_plot = temp.hvplot.contourf(
 )
 
 # Save to HTML
-hv.extension('bokeh')
-save(hv.render(animated_plot), filename="index.html")
+#hv.extension('bokeh')
+#save(hv.render(animated_plot), filename="index.html")
+
+# Generate HTML with custom title for the browser tab
+html = file_html(
+    hv.render(animated_plot), 
+    CDN, 
+    title="Lake ISIMIP Simulation"
+)
+
+# Save to file
+with open("index.html", "w") as f:
+    f.write(html)
