@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Global Temperature Viewer</title>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-  <script src="https://unpkg.com/netcdfjs@0.4.1/dist/netcdfjs.min.js"></script> <!-- ✅ UMD version -->
+  <script src="https://unpkg.com/netcdfjs@0.4.1/dist/netcdfjs.min.js"></script>
   <style>
     body {
       margin: 0;
@@ -23,15 +23,14 @@
   <script>
     async function loadNetCDF() {
       try {
-        const response = await fetch('data/gotm_20crv3-era5_obsclim_histsoc_default_surftemp_global_annual_1901_2021.nc'); // Ensure this path is correct
+        const response = await fetch('data/tgotm_20crv3-era5_obsclim_histsoc_default_surftemp_global_annual_1901_2021.nc'); // Adjust if needed
         const arrayBuffer = await response.arrayBuffer();
-        const reader = new netcdfjs.NetCDFReader(arrayBuffer); // ✅ Now defined
+        const reader = new netcdfjs.NetCDFReader(arrayBuffer);
 
         const lat = reader.getDataVariable('lat');
         const lon = reader.getDataVariable('lon');
-        const temp = reader.getDataVariable('surftemp'); // Adjust to your var name
+        const temp = reader.getDataVariable('surftemp'); // Adjust name if needed
 
-        // Assume data shape is [lat, lon]
         const rows = lat.length;
         const cols = lon.length;
 
