@@ -42,8 +42,8 @@
         //console.log('Min raw value:', Math.min(...filteredValues));
         //console.log('Max raw value:', Math.max(...filteredValues));
         
-        const tempData = ncFile.readVariable("surftemp");
-	console.log("Sample of raw data values (Kelvin):", tempData.slice(0, 10));
+        //const tempData = ncFile.readVariable("surftemp");
+	console.log("Sample of raw data values (Kelvin):", tempLast.slice(0, 10));
 	console.log("Min raw value:", Math.min(...tempData));
 	console.log("Max raw value:", Math.max(...tempData));	
 
