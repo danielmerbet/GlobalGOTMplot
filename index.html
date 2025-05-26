@@ -3,40 +3,42 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Global Temperature Viewer</title>
+  <title>Global Lake Surface Temperature</title>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-  <script src="https://unpkg.com/netcdfjs@0.4.1/dist/netcdfjs.min.js"></script>
   <style>
-    body {
-      margin: 0;
-      font-family: sans-serif;
-    }
-    #plot {
-      width: 100vw;
-      height: 100vh;
-    }
+    body { margin: 0; font-family: sans-serif; }
+    #plot { width: 100vw; height: 100vh; }
   </style>
 </head>
 <body>
   <div id="plot">Loading NetCDF data...</div>
 
-  <script>
+  <script type="module">
+    import { NetCDFReader } from 'https://cdn.skypack.dev/netcdfjs';
+
     async function loadNetCDF() {
       try {
-        const response = await fetch('data/tgotm_20crv3-era5_obsclim_histsoc_default_surftemp_global_annual_1901_2021.nc'); // Adjust if needed
+        const response = await fetch('data/gotm_20crv3-era5_obsclim_histsoc_default_surftemp_global_annual_1901_2021.nc');
         const arrayBuffer = await response.arrayBuffer();
-        const reader = new netcdfjs.NetCDFReader(arrayBuffer);
+        const reader = new NetCDFReader(arrayBuffer);
 
         const lat = reader.getDataVariable('lat');
         const lon = reader.getDataVariable('lon');
-        const temp = reader.getDataVariable('surftemp'); // Adjust name if needed
+        const surftemp = reader.getDataVariable('surftemp');
 
-        const rows = lat.length;
-        const cols = lon.length;
+        const timeLength = reader.dimensions.find(d => d.name === 'time').size;
+        const latLength = lat.length;
+        const lonLength = lon.length;
 
+        // Use the last time step (2021)
+        const sliceStart = (timeLength - 1) * latLength * lonLength;
+        const sliceEnd = sliceStart + latLength * lonLength;
+        const tempLast = surftemp.slice(sliceStart, sliceEnd);
+
+        // Reshape to 2D (lat x lon)
         const z = [];
-        for (let i = 0; i < rows; i++) {
-          z.push(temp.slice(i * cols, (i + 1) * cols));
+        for (let i = 0; i < latLength; i++) {
+          z.push(tempLast.slice(i * lonLength, (i + 1) * lonLength).map(k => k - 273.15)); // Kelvin → Celsius
         }
 
         const data = [{
@@ -45,11 +47,12 @@
           y: lat,
           type: 'heatmap',
           colorscale: 'Jet',
-          colorbar: { title: 'Lake Surface Water Temperature (°C)' }
+          colorbar: { title: '°C' },
+          reversescale: true
         }];
 
         const layout = {
-          title: 'Global Surface Temperature',
+          title: 'Lake Surface Water Temperature (Year: 2021)',
           xaxis: { title: 'Longitude' },
           yaxis: { title: 'Latitude' }
         };
