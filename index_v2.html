@@ -35,26 +35,11 @@
         const sliceEnd = sliceStart + latLength * lonLength;
         const tempLast = surftemp.slice(sliceStart, sliceEnd);
 
-        console.log('Sample of raw data values (Kelvin):', tempLast.slice(0, 10));
-
-        const fillValue = -9999; // adjust if you know the actual _FillValue in your file
-        const filteredValues = tempLast.filter(v => v !== fillValue);
-        console.log('Min raw value:', Math.min(...filteredValues));
-        console.log('Max raw value:', Math.max(...filteredValues));
-
-        // Convert Kelvin to Celsius and handle missing values
+        // Reshape to 2D (lat x lon)
         const z = [];
         for (let i = 0; i < latLength; i++) {
-          const row = tempLast.slice(i * lonLength, (i + 1) * lonLength).map(k => {
-            if (k === fillValue) return null;
-            return k - 273.15;
-          });
-          z.push(row);
+          z.push(tempLast.slice(i * lonLength, (i + 1) * lonLength).map(k => k - 273.15)); // Kelvin → Celsius
         }
-
-        // Optional: flip latitude and z if lat is descending (uncomment if needed)
-        // lat.reverse();
-        // z.reverse();
 
         const data = [{
           z: z,
@@ -62,8 +47,8 @@
           y: lat,
           type: 'heatmap',
           colorscale: 'Jet',
-          colorbar: { title: '°C' }
-          // reversescale: true  <-- removed for clarity
+          colorbar: { title: '°C' },
+          reversescale: true
         }];
 
         const layout = {
