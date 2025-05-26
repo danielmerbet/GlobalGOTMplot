@@ -39,8 +39,13 @@
 
         const fillValue = -9999; // adjust if you know the actual _FillValue in your file
         const filteredValues = tempLast.filter(v => v !== fillValue);
-        console.log('Min raw value:', Math.min(...filteredValues));
-        console.log('Max raw value:', Math.max(...filteredValues));
+        //console.log('Min raw value:', Math.min(...filteredValues));
+        //console.log('Max raw value:', Math.max(...filteredValues));
+        
+        const tempData = ncFile.readVariable("surftemp");
+	console.log("Sample of raw data values (Kelvin):", tempData.slice(0, 10));
+	console.log("Min raw value:", Math.min(...tempData));
+	console.log("Max raw value:", Math.max(...tempData));	
 
         // Convert Kelvin to Celsius and handle missing values
         const z = [];
