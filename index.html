@@ -5,12 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Global Temperature Viewer</title>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/netcdfjs@0.5.1/dist/netcdfjs.min.js"></script>
+  <script src="https://unpkg.com/netcdfjs@0.4.1/dist/netcdfjs.min.js"></script> <!-- ✅ UMD version -->
   <style>
     body {
-      font-family: sans-serif;
       margin: 0;
-      padding: 0;
+      font-family: sans-serif;
     }
     #plot {
       width: 100vw;
@@ -23,60 +22,47 @@
 
   <script>
     async function loadNetCDF() {
-      const response = await fetch('data/gotm_20crv3-era5_obsclim_histsoc_default_surftemp_global_annual_1901_2021.nc');
-      const arrayBuffer = await response.arrayBuffer();
-      const reader = new netcdfjs.NetCDFReader(arrayBuffer);
+      try {
+        const response = await fetch('data/gotm_20crv3-era5_obsclim_histsoc_default_surftemp_global_annual_1901_2021.nc'); // Ensure this path is correct
+        const arrayBuffer = await response.arrayBuffer();
+        const reader = new netcdfjs.NetCDFReader(arrayBuffer); // ✅ Now defined
 
-      const lats = reader.getDataVariable('lat');
-      const lons = reader.getDataVariable('lon');
-      const temps = reader.getDataVariable('surftemp'); // change name as needed
+        const lat = reader.getDataVariable('lat');
+        const lon = reader.getDataVariable('lon');
+        const temp = reader.getDataVariable('surftemp'); // Adjust to your var name
 
-      // Assume the first time slice if 3D
-      const timeDim = reader.variables.find(v => v.name === 'surftemp').dimensions;
-      const is3D = timeDim.length === 3;
+        // Assume data shape is [lat, lon]
+        const rows = lat.length;
+        const cols = lon.length;
 
-      let tempData;
-      if (is3D) {
-        const [timeSize, latSize, lonSize] = timeDim.map(dim => reader.dimensions.find(d => d.name === dim).size);
-        tempData = temps.slice(0, latSize * lonSize); // 1st time slice
-      } else {
-        tempData = temps;
-      }
-
-      // Create 2D array for Plotly
-      const z = [];
-      for (let i = 0; i < lats.length; i++) {
-        const row = [];
-        for (let j = 0; j < lons.length; j++) {
-          row.push(tempData[i * lons.length + j]);
+        const z = [];
+        for (let i = 0; i < rows; i++) {
+          z.push(temp.slice(i * cols, (i + 1) * cols));
         }
-        z.push(row);
+
+        const data = [{
+          z: z,
+          x: lon,
+          y: lat,
+          type: 'heatmap',
+          colorscale: 'Jet',
+          colorbar: { title: 'Lake Surface Water Temperature (°C)' }
+        }];
+
+        const layout = {
+          title: 'Global Surface Temperature',
+          xaxis: { title: 'Longitude' },
+          yaxis: { title: 'Latitude' }
+        };
+
+        Plotly.newPlot('plot', data, layout);
+      } catch (err) {
+        document.getElementById('plot').innerText = 'Failed to load data: ' + err;
+        console.error(err);
       }
-
-      const data = [{
-        z: z,
-        x: lons,
-        y: lats,
-        type: 'heatmap',
-        colorscale: 'Jet',
-        colorbar: {
-          title: 'Lake Surface Temperature (°C)'
-        }
-      }];
-
-      const layout = {
-        title: 'Global Temperature',
-        xaxis: { title: 'Longitude' },
-        yaxis: { title: 'Latitude' }
-      };
-
-      Plotly.newPlot('plot', data, layout);
     }
 
-    loadNetCDF().catch(error => {
-      document.getElementById('plot').innerText = 'Failed to load data: ' + error;
-      console.error(error);
-    });
+    loadNetCDF();
   </script>
 </body>
 </html>
